@@ -1,64 +1,66 @@
 using Biblioteca.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using System;
 
 namespace Biblioteca.Controllers
 {
-    
     public class EmprestimoController : Controller
     {
-        public IActionResult Cadastro()
-        {
-            LivroService livroService = new LivroService();
-            EmprestimoService emprestimoService = new EmprestimoService();
+        private readonly IEmprestimoService _emprestimoRepositorio;
+        private readonly ILivroService _livroRepositorio;
 
-            CadEmprestimoViewModel cadModel = new CadEmprestimoViewModel();
-            cadModel.Livros = livroService.ListarTodos();
-            return View(cadModel);
+        public EmprestimoController(IEmprestimoService emprestimoRepositorio, ILivroService livroRepositorio)
+        {
+            _emprestimoRepositorio = emprestimoRepositorio ??
+                throw new ArgumentNullException(nameof(emprestimoRepositorio));
+
+            _livroRepositorio = livroRepositorio ??
+                throw new ArgumentNullException(nameof(livroRepositorio));
+        }
+
+        public IActionResult Cadastro(CadastroEmprestimoViewModel viewModel)
+        {
+            viewModel.Livros = _livroRepositorio.ListarTodos();
+            return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult Cadastro(CadEmprestimoViewModel viewModel)
-        {
-            EmprestimoService emprestimoService = new EmprestimoService();
-            
+        public IActionResult Cadastro(int emprestimoId, CadastroEmprestimoViewModel viewModel)
+        {            
             if(viewModel.Emprestimo.Id == 0)
             {
-                emprestimoService.Inserir(viewModel.Emprestimo);
+                _emprestimoRepositorio.Inserir(viewModel.Emprestimo);
             }
             else
             {
-                emprestimoService.Atualizar(viewModel.Emprestimo);
+                _emprestimoRepositorio.Atualizar(emprestimoId, viewModel.Emprestimo);
             }
+
             return RedirectToAction("Listagem");
         }
 
         public IActionResult Listagem(string tipoFiltro, string filtro)
         {
             FiltrosEmprestimos objFiltro = null;
+
             if(!string.IsNullOrEmpty(filtro))
             {
                 objFiltro = new FiltrosEmprestimos();
                 objFiltro.Filtro = filtro;
                 objFiltro.TipoFiltro = tipoFiltro;
             }
-            EmprestimoService emprestimoService = new EmprestimoService();
-            return View(emprestimoService.ListarTodos(objFiltro));
+
+            return View(_emprestimoRepositorio.ListarTodos(objFiltro));
         }
 
-        public IActionResult Edicao(int id)
+        public IActionResult Edicao(int emprestimoId, CadastroEmprestimoViewModel viewModel, Emprestimo emprestimo)
         {
-            LivroService livroService = new LivroService();
-            EmprestimoService em = new EmprestimoService();
-            Emprestimo e = em.ObterPorId(id);
+            _emprestimoRepositorio.ObterPorId(emprestimoId, emprestimo);
 
-            CadEmprestimoViewModel cadModel = new CadEmprestimoViewModel();
-            cadModel.Livros = livroService.ListarTodos();
-            cadModel.Emprestimo = e;
+            viewModel.Livros = _livroRepositorio.ListarTodos();
+            viewModel.Emprestimo = emprestimo;
             
-            return View(cadModel);
+            return View(viewModel);
         }
     }
 }

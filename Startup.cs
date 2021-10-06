@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Biblioteca.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,8 +20,20 @@ namespace Biblioteca
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionString = "Server=localhost; User=root; Database=Biblioteca";
+
+            services.AddDbContext<BibliotecaContext>(
+                 dbContextOptions => dbContextOptions
+                .UseMySql(connectionString)
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors());
+
             services.AddControllersWithViews();
             services.AddDistributedMemoryCache();
+            
+            services.AddTransient<ILivroService, LivroService>();
+            services.AddTransient<IEmprestimoService, EmprestimoService>();
+
             services.AddSession();
         }
 

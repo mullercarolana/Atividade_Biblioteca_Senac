@@ -1,10 +1,19 @@
 using Biblioteca.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace Biblioteca.Controllers
 {
     public class LivroController : Controller
     {
+        private readonly ILivroService _livroRepositorio;
+
+        public LivroController(ILivroService livroRepositorio)
+        {
+            _livroRepositorio = livroRepositorio ??
+                throw new ArgumentNullException(nameof(livroRepositorio)); ;
+        }
+
         public IActionResult Cadastro()
         {
             Autenticacao.CheckLogin(this);
@@ -12,17 +21,16 @@ namespace Biblioteca.Controllers
         }
 
         [HttpPost]
-        public IActionResult Cadastro(Livro l)
+        public IActionResult Cadastro(int livroId, Livro livro)
         {
-            LivroService livroService = new LivroService();
 
-            if(l.Id == 0)
+            if(livro.Id == 0)
             {
-                livroService.Inserir(l);
+                _livroRepositorio.Inserir(livro);
             }
             else
             {
-                livroService.Atualizar(l);
+                _livroRepositorio.Atualizar(livroId, livro);
             }
 
             return RedirectToAction("Listagem");
@@ -32,22 +40,22 @@ namespace Biblioteca.Controllers
         {
             Autenticacao.CheckLogin(this);
             FiltrosLivros objFiltro = null;
+
             if(!string.IsNullOrEmpty(filtro))
             {
                 objFiltro = new FiltrosLivros();
                 objFiltro.Filtro = filtro;
                 objFiltro.TipoFiltro = tipoFiltro;
             }
-            LivroService livroService = new LivroService();
-            return View(livroService.ListarTodos(objFiltro));
+
+            return View(_livroRepositorio.ListarTodos(objFiltro));
         }
 
-        public IActionResult Edicao(int id)
+        public IActionResult Edicao(int livroId, Livro livro)
         {
             Autenticacao.CheckLogin(this);
-            LivroService ls = new LivroService();
-            Livro l = ls.ObterPorId(id);
-            return View(l);
+            livro = _livroRepositorio.ObterPorId(livroId, livro);
+            return View(livro);
         }
     }
 }

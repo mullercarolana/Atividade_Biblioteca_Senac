@@ -18,49 +18,58 @@ namespace Biblioteca.Controllers
                 throw new ArgumentNullException(nameof(livroRepositorio));
         }
 
-        public IActionResult Cadastro(CadastroEmprestimoViewModel viewModel)
+        public IActionResult Cadastro(CadEmprestimoViewModel viewModel)
         {
-            viewModel.Livros = _livroRepositorio.ListarTodos();
+            Autenticacao.CheckLogin(this);
+
+            viewModel.LivrosDisponiveis = _livroRepositorio.ListarDisponiveis();
             return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult Cadastro(int emprestimoId, CadastroEmprestimoViewModel viewModel)
-        {            
-            if(viewModel.Emprestimo.Id == 0)
-            {
+        public IActionResult Cadastro(int Id, CadEmprestimoViewModel viewModel)
+        {
+            Autenticacao.CheckLogin(this);
+
+            if (Id == 0)
                 _emprestimoRepositorio.Inserir(viewModel.Emprestimo);
-            }
             else
-            {
-                _emprestimoRepositorio.Atualizar(emprestimoId, viewModel.Emprestimo);
-            }
+                _emprestimoRepositorio.Atualizar(Id, viewModel.Emprestimo);
 
             return RedirectToAction("Listagem");
         }
 
         public IActionResult Listagem(string tipoFiltro, string filtro)
         {
-            FiltrosEmprestimos objFiltro = null;
+            Autenticacao.CheckLogin(this);
 
-            if(!string.IsNullOrEmpty(filtro))
+            FiltroEmprestimos objFiltro = new FiltroEmprestimos();
+
+            if (!string.IsNullOrEmpty(filtro))
             {
-                objFiltro = new FiltrosEmprestimos();
-                objFiltro.Filtro = filtro;
-                objFiltro.TipoFiltro = tipoFiltro;
+                objFiltro = new FiltroEmprestimos
+                {
+                    Filtro = filtro,
+                    TipoFiltro = tipoFiltro
+                };
             }
 
-            return View(_emprestimoRepositorio.ListarTodos(objFiltro));
+            var listagem = _emprestimoRepositorio.ListarTodos(objFiltro);
+            return View(listagem);
         }
 
-        public IActionResult Edicao(int emprestimoId, CadastroEmprestimoViewModel viewModel, Emprestimo emprestimo)
+        public IActionResult Edicao(int id)
         {
-            _emprestimoRepositorio.ObterPorId(emprestimoId, emprestimo);
+            var emprestimo = _emprestimoRepositorio.ObterPorId(id);
+            var livrosDisponiveis = _livroRepositorio.ListarDisponiveis(emprestimo.LivroId);
 
-            viewModel.Livros = _livroRepositorio.ListarTodos();
-            viewModel.Emprestimo = emprestimo;
-            
-            return View(viewModel);
+            var vm = new CadEmprestimoViewModel()
+            {
+                Emprestimo = emprestimo,
+                LivrosDisponiveis = livrosDisponiveis
+            };
+
+            return View(vm);
         }
     }
 }

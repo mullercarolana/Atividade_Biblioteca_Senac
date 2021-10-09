@@ -11,7 +11,7 @@ namespace Biblioteca.Controllers
         public LivroController(ILivroService livroRepositorio)
         {
             _livroRepositorio = livroRepositorio ??
-                throw new ArgumentNullException(nameof(livroRepositorio)); ;
+                throw new ArgumentNullException(nameof(livroRepositorio));
         }
 
         public IActionResult Cadastro()
@@ -21,17 +21,12 @@ namespace Biblioteca.Controllers
         }
 
         [HttpPost]
-        public IActionResult Cadastro(int livroId, Livro livro)
+        public IActionResult Cadastro(int id, Livro livro)
         {
-
-            if(livro.Id == 0)
-            {
+            if (livro.Id == 0)
                 _livroRepositorio.Inserir(livro);
-            }
             else
-            {
-                _livroRepositorio.Atualizar(livroId, livro);
-            }
+                _livroRepositorio.Atualizar(id, livro);
 
             return RedirectToAction("Listagem");
         }
@@ -39,22 +34,30 @@ namespace Biblioteca.Controllers
         public IActionResult Listagem(string tipoFiltro, string filtro)
         {
             Autenticacao.CheckLogin(this);
-            FiltrosLivros objFiltro = null;
 
-            if(!string.IsNullOrEmpty(filtro))
+            FiltroLivros objFiltro = new FiltroLivros();
+
+            if (!string.IsNullOrEmpty(filtro))
             {
-                objFiltro = new FiltrosLivros();
-                objFiltro.Filtro = filtro;
-                objFiltro.TipoFiltro = tipoFiltro;
+                objFiltro = new FiltroLivros
+                {
+                    Filtro = filtro,
+                    TipoFiltro = tipoFiltro
+                };
             }
 
-            return View(_livroRepositorio.ListarTodos(objFiltro));
+            var listagem = _livroRepositorio.ListarTodos(objFiltro);
+
+            return View(listagem);
         }
 
-        public IActionResult Edicao(int livroId, Livro livro)
+        public IActionResult Edicao(int id, Livro livro)
         {
+            if (livro is null)
+                throw new ArgumentNullException(nameof(livro));
+
             Autenticacao.CheckLogin(this);
-            livro = _livroRepositorio.ObterPorId(livroId, livro);
+            livro = _livroRepositorio.ObterPorId(id);
             return View(livro);
         }
     }

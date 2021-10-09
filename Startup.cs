@@ -31,8 +31,8 @@ namespace Biblioteca
             services.AddControllersWithViews();
             services.AddDistributedMemoryCache();
             
-            services.AddTransient<ILivroService, LivroService>();
-            services.AddTransient<IEmprestimoService, EmprestimoService>();
+            services.AddScoped<ILivroService, LivroService>();
+            services.AddScoped<IEmprestimoService, EmprestimoService>();
 
             services.AddSession();
         }

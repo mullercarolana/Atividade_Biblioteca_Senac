@@ -4,7 +4,6 @@ namespace Biblioteca.Models
 {
     public class Livro
     {
-        [Key]
         public int Id { get; set; }
 
         [Required(ErrorMessage = "O título do livro é obrigatório.")]

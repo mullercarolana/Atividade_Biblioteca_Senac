@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,18 +8,20 @@ namespace Biblioteca.Models
     public interface IEmprestimoService
     {
         void Inserir(Emprestimo emprestimo);
-        void Atualizar(int emprestimoId, Emprestimo emprestimo);
-        ICollection<Emprestimo> ListarTodos(FiltrosEmprestimos filtro);
-        Emprestimo ObterPorId(int emprestimoId, Emprestimo emprestimo);
+        void Atualizar(int id, Emprestimo emprestimo);
+        ICollection<Emprestimo> ListarTodos(FiltroEmprestimos filtro);
+        Emprestimo ObterPorId(int id);
     }
 
     public sealed class EmprestimoService : IEmprestimoService
     {
         private readonly BibliotecaContext _contexto;
+        private readonly ILivroService _livroService;
 
-        public EmprestimoService(BibliotecaContext contexto)
+        public EmprestimoService(BibliotecaContext contexto, ILivroService livroService)
         {
             _contexto = contexto ?? throw new ArgumentNullException(nameof(contexto));
+            _livroService = livroService ?? throw new ArgumentNullException(nameof(livroService));
         }
 
         public void Inserir(Emprestimo emprestimo)
@@ -30,49 +33,53 @@ namespace Biblioteca.Models
             _contexto.SaveChanges();
         }
 
-        public void Atualizar(int emprestimoId, Emprestimo emprestimo)
+        public void Atualizar(int id, Emprestimo emprestimo)
         {
-            if (emprestimoId == emprestimo.Id)
-                throw new ArgumentNullException(nameof(emprestimoId));
+            if (id == emprestimo.Id)
+                throw new ArgumentNullException(nameof(id));
 
-            _contexto.Emprestimos.Any(e => e.Id == emprestimoId);
+            var emprestimoAtual = ObterPorId(id);
+
+            emprestimoAtual.NomeUsuario = emprestimo.NomeUsuario;
+            emprestimoAtual.Telefone = emprestimo.Telefone;
+            emprestimoAtual.Devolvido = emprestimo.Devolvido;
+            emprestimoAtual.DataDevolucao = emprestimo.DataDevolucao;
+            emprestimoAtual.DataEmprestimo = emprestimo.DataEmprestimo;
+
+            var novoLivro = ObterLivroPeloId(emprestimo.LivroId);
+            emprestimoAtual.Livro = novoLivro;
+
             _contexto.SaveChanges();
         }
 
-        public ICollection<Emprestimo> ListarTodos(FiltrosEmprestimos filtro)
+        public ICollection<Emprestimo> ListarTodos(FiltroEmprestimos filtro = null)
         {
-            IQueryable<Emprestimo> consulta;
+            var resultado = _contexto.Emprestimos.AsQueryable();
 
-            if (filtro != null)
+            switch (filtro?.TipoFiltro)
             {
-                switch (filtro.TipoFiltro)
-                {
-                    case "Usuario":
-                        consulta = _contexto.Emprestimos.Where(e => e.NomeUsuario.Contains(filtro.Filtro));
-                        break;
-
-                    case "Livro":
-                        consulta = _contexto.Emprestimos.Where(e => e.Livro.Titulo.Contains(filtro.Filtro));
-                        break;
-                    default:
-                        consulta = _contexto.Emprestimos;
-                        break;
-                }
-            }
-            else
-            {
-                consulta = _contexto.Emprestimos;
+                case "Usuario":
+                    resultado = resultado.Where(e => e.NomeUsuario.ToLower().Contains(filtro.Filtro.ToLower()));
+                    break;
+                case "Livro":
+                    resultado = resultado.Where(e => e.Livro.Titulo.ToLower().Contains(filtro.Filtro.ToLower()));
+                    break;
             }
 
-            return _contexto.Emprestimos.OrderByDescending(e => e.Livro).ToList();
+            return resultado
+                   .Include(x => x.Livro)
+                   .OrderByDescending(e => e.DataDevolucao)
+                   .ToList();
         }
 
-        public Emprestimo ObterPorId(int emprestimoId, Emprestimo emprestimo)
+        public Emprestimo ObterPorId(int id)
         {
-            if (emprestimoId == emprestimo.Id)
-                throw new ArgumentNullException(nameof(emprestimoId));
-
-            return _contexto.Emprestimos.FirstOrDefault(e => e.Id == emprestimoId);
+            return _contexto.Emprestimos
+                .Include(e => e.Livro)
+                .Where(e => e.Id == id)
+                .First();
         }
+
+        private Livro ObterLivroPeloId(int livroId) => _livroService.ObterPorId(livroId);
     }
 }

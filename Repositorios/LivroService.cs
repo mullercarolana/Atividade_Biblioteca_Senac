@@ -7,10 +7,10 @@ namespace Biblioteca.Models
     public interface ILivroService
     {
         void Inserir(Livro livro);
-        void Atualizar(int livroId, Livro livro);
-        ICollection<Livro> ListarTodos(FiltrosLivros filtro = null);
-        ICollection<Livro> ListarDisponiveis();
-        Livro ObterPorId(int livroId, Livro livro);
+        void Atualizar(int id, Livro livro);
+        ICollection<Livro> ListarTodos(FiltroLivros filtro = null);
+        ICollection<Livro> ListarDisponiveis(int? livroAtualId = null);
+        Livro ObterPorId(int id);
     }
 
     public sealed class LivroService : ILivroService
@@ -31,61 +31,59 @@ namespace Biblioteca.Models
             _contexto.SaveChanges();
         }
 
-        public void Atualizar(int livroId, Livro livro)
+        public void Atualizar(int id, Livro livroDTO)
         {
-            if (livroId == livro.Id)
-                throw new ArgumentNullException(nameof(livroId));
+            var livro = ObterPorId(id);
 
-            _contexto.Livros.Any(l => l.Id == livroId);
+            livro.Autor = livroDTO.Autor;
+            livro.Titulo = livroDTO.Titulo;
+            livro.Ano = livroDTO.Ano;
+
             _contexto.SaveChanges();
         }
 
-        public ICollection<Livro> ListarTodos(FiltrosLivros filtro)
+        public ICollection<Livro> ListarTodos(FiltroLivros filtro = null)
         {
-            IQueryable<Livro> consulta;
-
-            if (filtro != null)
+            switch (filtro?.TipoFiltro)
             {
-                switch (filtro.TipoFiltro)
-                {
-                    case "Autor":
-                        consulta = _contexto.Livros.Where(l => l.Autor.Contains(filtro.Filtro));
-                        break;
+                case "Titulo":
+                    return _contexto.Livros
+                        .Where(l => l.Titulo.ToLower().Contains(filtro.Filtro.ToLower()))
+                        .OrderBy(l => l.Titulo)
+                        .ToList();
 
-                    case "Titulo":
-                        consulta = _contexto.Livros.Where(l => l.Titulo.Contains(filtro.Filtro));
-                        break;
-
-                    default:
-                        consulta = _contexto.Livros;
-                        break;
-                }
-            }
-            else
-            {
-                consulta = _contexto.Livros;
+                case "Autor":
+                    return _contexto.Livros
+                    .Where(l => l.Autor.ToLower().Contains(filtro.Filtro.ToLower()))
+                    .OrderBy(l => l.Titulo)
+                    .ToList();
             }
 
-            return consulta.OrderByDescending(l => l.Titulo).ToList();
+            return _contexto.Livros
+                   .OrderBy(l => l.Titulo)
+                   .ToList();
 
         }
 
-        public ICollection<Livro> ListarDisponiveis()
+        public ICollection<Livro> ListarDisponiveis(int? livroAtualId = null)
         {
-            //busca os livros onde o id não está entre os ids de livro em empréstimo
-            // utiliza uma subconsulta
-            return
-                _contexto.Livros
-                .Where(l => !(_contexto.Emprestimos.Where(e => e.Devolvido == true).Select(e => e.LivroId).Contains(l.Id)))
+            var resultado = _contexto.Livros
+                .Where(l => !_contexto.Emprestimos
+                        .Where(e => !e.Devolvido)
+                        .Select(e => e.LivroId)
+                        .Contains(l.Id)
+                )
                 .ToList();
+
+            if (livroAtualId != null)
+                resultado.Add(_contexto.Livros.FirstOrDefault(l => l.Id == livroAtualId));
+
+            return resultado.OrderBy(l => l.Titulo).ToList();
         }
 
-        public Livro ObterPorId(int livroId, Livro livro)
+        public Livro ObterPorId(int id)
         {
-            if (livroId == livro.Id)
-                throw new ArgumentNullException(nameof(livroId));
-
-            return _contexto.Livros.FirstOrDefault(l => l.Id == livroId);
+            return _contexto.Livros.FirstOrDefault(l => l.Id == id);
         }
     }
 }

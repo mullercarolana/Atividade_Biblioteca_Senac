@@ -45,15 +45,13 @@
                 <tbody>
                     @foreach (Emprestimo emprestimo in Model)
                     {
-                        <tr>
+                        <tr class="@((!emprestimo.Devolvido && emprestimo.DataDevolucao < DateTime.Now) ? "table-danger" : string.Empty)">
                             <td>@emprestimo.Id</td>
                             <td>@emprestimo.NomeUsuario</td>
                             <td>@emprestimo.DataEmprestimo.ToString("dd/MM/yyyy")</td>
                             <td>@emprestimo.DataDevolucao.ToString("dd/MM/yyyy")</td>
-
                             <td>@emprestimo.Livro.Titulo</td>
                             <td>@emprestimo.Livro.Autor</td>
-
                             <td><a href="/Emprestimo/Edicao/@emprestimo.Id">Editar</a></td>
                         </tr>
                     }

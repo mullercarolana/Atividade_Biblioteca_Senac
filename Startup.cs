@@ -1,4 +1,5 @@
 using Biblioteca.Models;
+using Biblioteca.Repositorios;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ namespace Biblioteca
             
             services.AddScoped<ILivroService, LivroService>();
             services.AddScoped<IEmprestimoService, EmprestimoService>();
+            services.AddScoped<IUsuarioService, UsuarioService>();
 
             services.AddSession();
         }

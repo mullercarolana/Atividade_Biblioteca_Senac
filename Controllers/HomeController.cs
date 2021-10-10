@@ -1,22 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Biblioteca.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Biblioteca.Repositorios;
+using System;
+using Biblioteca.Models;
 
 namespace Biblioteca.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly IUsuarioService _usuarioRepositorio;
 
-        public HomeController(ILogger<HomeController> logger)
+
+        public HomeController(IUsuarioService usuarioRepositorio)
         {
-            _logger = logger;
+            _usuarioRepositorio = usuarioRepositorio ??
+                throw new ArgumentNullException(nameof(usuarioRepositorio));
         }
 
         public IActionResult Index()
@@ -33,16 +31,25 @@ namespace Biblioteca.Controllers
         [HttpPost]
         public IActionResult Login(string login, string senha)
         {
-            if(login != "admin" || senha != "123")
+            var loginUsuario = _usuarioRepositorio.ObterLogin(new Usuario(login, senha));
+
+            if (loginUsuario == null)
             {
-                ViewData["Erro"] = "Senha inválida";
+                ViewData["Erro"] = "Usuário ou senha inválidos.";
                 return View();
             }
             else
             {
-                HttpContext.Session.SetString("user", "admin");
+                HttpContext.Session.SetString("user", loginUsuario.NomeUsuario);
                 return RedirectToAction("Index");
             }
+        }
+
+        //[HttpPost]
+        public IActionResult Sair()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index");
         }
 
         public IActionResult Privacy()

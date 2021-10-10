@@ -4,6 +4,17 @@ namespace Biblioteca.Models
 {
     public class Usuario
     {
+        public Usuario()
+        {
+
+        }
+
+        public Usuario(string nomeUsuario, string senha)
+        {
+            NomeUsuario = nomeUsuario;
+            Senha = senha;
+        }
+
         [Key]
         public int Id { get; set; }
 

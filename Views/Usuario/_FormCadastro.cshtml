@@ -1,0 +1,25 @@
+﻿@model Usuario
+
+@{ var editando = Model != null; }
+
+<form asp-action="Cadastro" method="POST">
+
+    <input type="hidden" asp-for="Id">
+
+    <p>
+        <label asp-for="NomeUsuario">Nome:</label>
+        <input asp-for="NomeUsuario" required />
+    </p>
+    <p>
+        <label asp-for="Email">Login:</label>
+        <input asp-for="Email" required />
+    </p>
+    <p>
+        <label asp-for="Senha">Senha:</label>
+        <input type="password" maxlength="6" asp-for="Senha" required="@(!editando)" />
+    </p>
+    <p>
+        <input type="submit" value="Voltar" asp-controller="Usuario" asp-action="Listagem" formnovalidate="formnovalidate" class="btn" />
+        <input type="submit" value="Salvar" />
+    </p>
+</form>
